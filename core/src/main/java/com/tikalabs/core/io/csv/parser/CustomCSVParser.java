@@ -7,7 +7,7 @@ import org.apache.commons.csv.CSVRecord;
 
 public class CustomCSVParser extends AbstractCSVParser<Map<String, String>> {
 
-	protected CustomCSVParser(String filePath) {
+	public CustomCSVParser(String filePath) {
 		super(filePath);
 	}
 
