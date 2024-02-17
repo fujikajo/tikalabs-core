@@ -62,7 +62,7 @@ public class DataSourceFactory {
         	 oracleDs.setUser(properties.getProperty("user"));
              oracleDs.setPassword(properties.getProperty("password"));
              oracleDs.setURL("jdbc:oracle:thin:@" + properties.getProperty("db-server") + ":" + properties.getProperty("db-port") + ":" + properties.getProperty("db-name"));
-        	 
+             return oracleDs;
          default:
              throw new IllegalArgumentException("Nicht unterstützter Datenbanktyp: " + dbType);
 				
