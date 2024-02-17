@@ -17,21 +17,20 @@ import com.tikalabs.core.database.dao.mapper.RowMapperResultSetExtractor;
 import com.tikalabs.core.database.dao.mapper.SingleColumnRowMapper;
 import com.tikalabs.core.database.utils.DBUtils;
 
-
 public class DBAccessor implements DBOperations {
-	
-	//protected final Logger logger = LogFactory.getLog(getClass());
-	
+
+	// protected final Logger logger = LogFactory.getLog(getClass());
+
 	private DataSource dataSource = null;
-	private Connection con        = null; 
-	private String     message    = null;
-	
-	//private final int nullType;
-	
+	private Connection con = null;
+	private String message = null;
+
+	// private final int nullType;
+
 	public DBAccessor() {
 		this(DataSourceFactory.createDataSource());
 	}
-	
+
 	public DBAccessor(DataSource datasource) {
 		this.setDataSource(datasource);
 		this.setConnection(this.getDataSource());
@@ -46,63 +45,59 @@ public class DBAccessor implements DBOperations {
 	}
 
 	@Override
-	public ResultSet query(String sql)  {
-		
+	public ResultSet query(String sql) {
+
 		Statement stmt = null;
-		ResultSet rs   = null;
-		
+		ResultSet rs = null;
+
 		stmt = this.createStatement();
-		
+
 		try {
 			rs = stmt.executeQuery(sql);
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		
+
 		return rs;
 	}
 
 	public Connection getConnection() {
-		if (con==null) {
+		if (con == null) {
 			this.setConnection(this.getDataSource());
 		}
-		
+
 		return con;
 	}
-	
+
 	public String getURL() {
-		
-		if (con!=null) {
-		  try {
-		  	return con.getMetaData().getURL();
-			
-	    	  } catch (SQLException e) {
-			
-			e.printStackTrace();
-		       }
+
+		if (con != null) {
+			try {
+				return con.getMetaData().getURL();
+
+			} catch (SQLException e) {
+
+				e.printStackTrace();
+			}
 		}
 		return "Disconnected.";
-		
-		
-			
+
 	}
-	
-    public String getDatabaseProductName() {
-		
-		if (con!=null) {
-		  try {
-		  	return con.getMetaData().getDriverName() + " " + con.getMetaData().getDriverVersion();
-			
-	    	  } catch (SQLException e) {
-			
-			e.printStackTrace();
-		       }
+
+	public String getDatabaseProductName() {
+
+		if (con != null) {
+			try {
+				return con.getMetaData().getDriverName() + " " + con.getMetaData().getDriverVersion();
+
+			} catch (SQLException e) {
+
+				e.printStackTrace();
+			}
 		}
 		return "Disconnected.";
-		
-		
-			
+
 	}
 
 	public void setConnection(DataSource con) {
@@ -110,22 +105,20 @@ public class DBAccessor implements DBOperations {
 			this.con = con.getConnection();
 		} catch (SQLException e) {
 			this.setMessage(e.getMessage());
-			
+
 		}
 	}
-	
+
 	public boolean hasConnection() {
 		return (this.con != null);
 	}
-	
-	
-	
-	public <T> List<T> query(String sql, RowMapper<T> rowMapper)  {
- 		return query(sql, new RowMapperResultSetExtractor<T>(rowMapper));
- 	}
+
+	public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
+		return query(sql, new RowMapperResultSetExtractor<T>(rowMapper));
+	}
 
 	public <T> T query(final String sql, final ResultSetExtractor<T> rse) {
-		
+
 		ResultSet rs = null;
 		Statement stmt = this.createStatement();
 		try {
@@ -134,46 +127,39 @@ public class DBAccessor implements DBOperations {
 		} catch (SQLException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		finally {
-			
+		} finally {
+
 			DBUtils.closeResultSet(rs);
-			
+
 		}
 		return null;
-		
-		
+
 	};
-	
-	
-	public int queryForInt(String sql)  {
 
- 		Number number = queryForObject(sql, Integer.class);
- 		return (number != null ? number.intValue() : 0);
+	public int queryForInt(String sql) {
 
- 	}
-	
-	public String queryForString(String sql) {
-		String string = queryForObject(sql, String.class);
-		return string; 
+		Number number = queryForObject(sql, Integer.class);
+		return (number != null ? number.intValue() : 0);
+
 	}
 
-	
-	public <T> T queryForObject(String sql, Class<T> requiredType)  {
- 		return queryForObject(sql, getSingleColumnRowMapper(requiredType));
+	public String queryForString(String sql) {
+		String string = queryForObject(sql, String.class);
+		return string;
+	}
 
- 	}
+	public <T> T queryForObject(String sql, Class<T> requiredType) {
+		return queryForObject(sql, getSingleColumnRowMapper(requiredType));
 
+	}
 
- 	public <T> T queryForObject(String sql, RowMapper<T> rowMapper)  {
+	public <T> T queryForObject(String sql, RowMapper<T> rowMapper) {
 
- 		List<T> results = query(sql, rowMapper);
- 		return requiredSingleResult(results);
+		List<T> results = query(sql, rowMapper);
+		return requiredSingleResult(results);
 
- 	}
+	}
 
-	
-	
 	public Statement createStatement() {
 		try {
 			return this.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
@@ -183,11 +169,8 @@ public class DBAccessor implements DBOperations {
 		}
 		return null;
 	}
-	
-	
 
-	
-	private PreparedStatement createPreparedStatement(String sql, Object[] params)  {
+	private PreparedStatement createPreparedStatement(String sql, Object[] params) {
 
 		PreparedStatement statement;
 		try {
@@ -200,7 +183,7 @@ public class DBAccessor implements DBOperations {
 				} else if (params[i] instanceof Boolean) {
 					statement.setBoolean(i + 1, (Boolean) params[i]);
 				} else if (params[i] instanceof Date) {
-					statement.setDate(i + 1 ,  (java.sql.Date) params[i]);
+					statement.setDate(i + 1, (java.sql.Date) params[i]);
 				} else {
 					statement.setString(i + 1, (String) params[i]);
 				}
@@ -213,53 +196,43 @@ public class DBAccessor implements DBOperations {
 		}
 		return null;
 
-	
-
 	}
 
-	
-	public void update(String sql, Object... params)  {
-        PreparedStatement statement = null;
-        statement = createPreparedStatement(sql, params);
-	            try {
-						statement.executeUpdate();
-					} catch (SQLException e) {
-						
-						e.printStackTrace();
-					}  finally {
-		            DBUtils.closeStatement(statement);
-		        }
-    }
-	
-	
-	public void insert(String sql, Object... params) throws Exception  {
-        PreparedStatement statement = null;
-        boolean isWritten = false; 
-        statement = createPreparedStatement(sql, params);
-	            try {
-						statement.executeQuery();
-					} catch (Exception e) {
-						
-						throw e;
-						//e.printStackTrace();
-						
-					}  finally {
-		            DBUtils.closeStatement(statement);
-		        }
-        }
+	public void update(String sql, Object... params) {
+		PreparedStatement statement = null;
+		statement = createPreparedStatement(sql, params);
+		try {
+			statement.executeUpdate();
+		} catch (SQLException e) {
 
+			e.printStackTrace();
+		} finally {
+			DBUtils.closeStatement(statement);
+		}
+	}
 
-	
+	public void insert(String sql, Object... params) throws Exception {
+		PreparedStatement statement = null;
+		boolean isWritten = false;
+		statement = createPreparedStatement(sql, params);
+		try {
+			statement.executeQuery();
+		} catch (Exception e) {
 
+			throw e;
+			// e.printStackTrace();
+
+		} finally {
+			DBUtils.closeStatement(statement);
+		}
+	}
 
 	protected <T> RowMapper<T> getSingleColumnRowMapper(Class<T> requiredType) {
 		return new SingleColumnRowMapper<T>(requiredType);
 
 	}
 
-
-
-	public <T> T requiredSingleResult(Collection<T> results)  {
+	public <T> T requiredSingleResult(Collection<T> results) {
 
 		int size = (results != null ? results.size() : 0);
 		if (size == 0) {
@@ -281,8 +254,5 @@ public class DBAccessor implements DBOperations {
 	public void setMessage(String message) {
 		this.message = message;
 	}
-
-
-	
 
 }
