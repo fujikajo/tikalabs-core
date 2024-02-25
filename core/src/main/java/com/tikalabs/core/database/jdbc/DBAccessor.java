@@ -5,11 +5,15 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
+import java.time.LocalDate;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 
 import javax.sql.DataSource;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.tikalabs.core.database.dao.mapper.ResultSetExtractor;
 import com.tikalabs.core.database.dao.mapper.RowMapper;
@@ -19,7 +23,8 @@ import com.tikalabs.core.database.utils.DBUtils;
 
 public class DBAccessor implements DBOperations {
 
-	// protected final Logger logger = LogFactory.getLog(getClass());
+	// Erstellen Sie ein Logger-Objekt für die Klasse MyClass
+	private static final Logger logger = LoggerFactory.getLogger(DBAccessor.class);
 
 	private DataSource dataSource = null;
 	private Connection con = null;
@@ -33,7 +38,7 @@ public class DBAccessor implements DBOperations {
 
 	public DBAccessor(DataSource datasource) {
 		this.setDataSource(datasource);
-		this.setConnection(this.getDataSource());
+
 	}
 
 	public DataSource getDataSource() {
@@ -42,10 +47,11 @@ public class DBAccessor implements DBOperations {
 
 	public void setDataSource(DataSource dataSource) {
 		this.dataSource = dataSource;
+		this.setConnection(dataSource);
 	}
 
 	@Override
-	public ResultSet query(String sql) {
+	public ResultSet query(String sql) throws SQLException {
 
 		Statement stmt = null;
 		ResultSet rs = null;
@@ -55,8 +61,8 @@ public class DBAccessor implements DBOperations {
 		try {
 			rs = stmt.executeQuery(sql);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage());
+			throw e;
 		}
 
 		return rs;
@@ -78,7 +84,7 @@ public class DBAccessor implements DBOperations {
 
 			} catch (SQLException e) {
 
-				e.printStackTrace();
+				logger.error(e.getMessage());
 			}
 		}
 		return "Disconnected.";
@@ -93,18 +99,19 @@ public class DBAccessor implements DBOperations {
 
 			} catch (SQLException e) {
 
-				e.printStackTrace();
+				logger.error(e.getMessage());
 			}
 		}
 		return "Disconnected.";
 
 	}
 
-	public void setConnection(DataSource con) {
+	public void setConnection(DataSource ds) {
 		try {
-			this.con = con.getConnection();
+			this.con = ds.getConnection();
+
 		} catch (SQLException e) {
-			this.setMessage(e.getMessage());
+			logger.error("Could not connect to database.");
 
 		}
 	}
@@ -113,6 +120,7 @@ public class DBAccessor implements DBOperations {
 		return (this.con != null);
 	}
 
+	@Override
 	public <T> List<T> query(String sql, RowMapper<T> rowMapper) {
 		return query(sql, new RowMapperResultSetExtractor<T>(rowMapper));
 	}
@@ -125,8 +133,7 @@ public class DBAccessor implements DBOperations {
 			rs = stmt.executeQuery(sql);
 			return rse.extractData(rs);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		} finally {
 
 			DBUtils.closeResultSet(rs);
@@ -164,38 +171,42 @@ public class DBAccessor implements DBOperations {
 		try {
 			return this.getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		}
 		return null;
 	}
 
 	private PreparedStatement createPreparedStatement(String sql, Object[] params) {
-
 		PreparedStatement statement;
 		try {
 			statement = this.getConnection().prepareStatement(sql);
 			for (int i = 0; i < params.length; i++) {
 				if (params[i] == null) {
-					statement.setNull(i + 1, 0);
+					statement.setNull(i + 1, Types.NULL);
 				} else if (params[i] instanceof Integer) {
 					statement.setInt(i + 1, (Integer) params[i]);
 				} else if (params[i] instanceof Boolean) {
 					statement.setBoolean(i + 1, (Boolean) params[i]);
-				} else if (params[i] instanceof Date) {
-					statement.setDate(i + 1, (java.sql.Date) params[i]);
-				} else {
+					// Hinzufügen der Behandlung von LocalDate
+				} else if (params[i] instanceof LocalDate) {
+					LocalDate localDate = (LocalDate) params[i];
+					statement.setDate(i + 1, java.sql.Date.valueOf(localDate));
+				} else if (params[i] instanceof Double) {
+					statement.setDouble(i + 1, (Double) params[i]);
+				} else if (params[i] instanceof String) {
 					statement.setString(i + 1, (String) params[i]);
+					// Sie können weitere Typen hier nach Bedarf behandeln
+				} else {
+					// Für den Fall, dass ein unerwarteter Typ übergeben wird
+					throw new SQLException("Unhandhabbarer Parametertyp: " + params[i].getClass().getSimpleName());
 				}
 			}
-
 			return statement;
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			// Logging und Fehlerbehandlung
+			logger.error("Error creating PreparedStatement: ", e);
 		}
 		return null;
-
 	}
 
 	public void update(String sql, Object... params) {
@@ -205,7 +216,7 @@ public class DBAccessor implements DBOperations {
 			statement.executeUpdate();
 		} catch (SQLException e) {
 
-			e.printStackTrace();
+			logger.error(e.getMessage());
 		} finally {
 			DBUtils.closeStatement(statement);
 		}
@@ -213,14 +224,12 @@ public class DBAccessor implements DBOperations {
 
 	public void insert(String sql, Object... params) throws Exception {
 		PreparedStatement statement = null;
-		boolean isWritten = false;
 		statement = createPreparedStatement(sql, params);
 		try {
 			statement.executeQuery();
 		} catch (Exception e) {
-
+			logger.error(e.getMessage());
 			throw e;
-			// e.printStackTrace();
 
 		} finally {
 			DBUtils.closeStatement(statement);
