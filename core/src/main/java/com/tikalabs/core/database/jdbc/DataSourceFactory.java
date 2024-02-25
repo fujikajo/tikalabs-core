@@ -5,15 +5,21 @@ import java.util.Properties;
 
 import javax.sql.DataSource;
 
+import org.h2.jdbcx.JdbcDataSource;
 import org.mariadb.jdbc.MariaDbDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import oracle.ucp.jdbc.PoolDataSource;
 import oracle.ucp.jdbc.PoolDataSourceFactory;
 
 public class DataSourceFactory {
 
+	// Erstellen Sie ein Logger-Objekt für die Klasse MyClass
+	private static final Logger logger = LoggerFactory.getLogger(DataSourceFactory.class);
+
 	public enum DatabaseType {
-		MARIADB, ORACLE,
+		MARIADB, ORACLE, H2
 		// Definiere hier weitere Datenbanktypen
 	}
 
@@ -29,8 +35,7 @@ public class DataSourceFactory {
 			dataSource.setPortNumber(3306);
 			dataSource.setDatabaseName("portfolio");
 		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.error("An error occurred: " + e.getMessage(), e);
 		}
 
 		return dataSource;
@@ -59,9 +64,30 @@ public class DataSourceFactory {
 			oracleDs.setURL("jdbc:oracle:thin:@" + properties.getProperty("db-server") + ":"
 					+ properties.getProperty("db-port") + ":" + properties.getProperty("db-name"));
 			return oracleDs;
+		case H2:
+			JdbcDataSource ds = new JdbcDataSource();
+			ds.setURL("jdbc:h2:~/" + properties.getProperty("db-name")); // Pfad zur Datenbank
+			ds.setUser("user");
+			ds.setPassword("password");
+			return ds;
 		default:
+			logger.error("Nicht unterstützter Datenbanktyp: " + dbType);
 			throw new IllegalArgumentException("Nicht unterstützter Datenbanktyp: " + dbType);
 
+		}
+	}
+
+	public static DataSource createDataSource(DatabaseType dbType) {
+
+		switch (dbType) {
+		case H2:
+			JdbcDataSource ds = new JdbcDataSource();
+			ds.setURL("jdbc:h2:~/test"); // Pfad zur Datenbank
+			ds.setUser("user");
+			ds.setPassword("password");
+		default:
+			logger.error("Nicht unterstützter Datenbanktyp: " + dbType);
+			throw new IllegalArgumentException("Nicht unterstützter Datenbanktyp: " + dbType);
 		}
 	}
 
