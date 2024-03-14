@@ -209,17 +209,37 @@ public class DBAccessor implements DBOperations {
 		return null;
 	}
 
-	public void update(String sql, Object... params) {
-		PreparedStatement statement = null;
-		statement = createPreparedStatement(sql, params);
-		try {
-			statement.executeUpdate();
-		} catch (SQLException e) {
+//	public void update(String sql, Object... params) {
+//		PreparedStatement statement = null;
+//		statement = createPreparedStatement(sql, params);
+//		try {
+//			statement.executeUpdate();
+//		} catch (SQLException e) {
+//
+//			logger.error(e.getMessage());
+//		} finally {
+//			DBUtils.closeStatement(statement);
+//		}
+//	}
 
-			logger.error(e.getMessage());
+	public boolean update(String sql, Object... params) {
+		PreparedStatement statement = null;
+		try {
+			statement = createPreparedStatement(sql, params);
+			int affectedRows = statement.executeUpdate();
+			return affectedRows > 0; // true, wenn Zeilen betroffen sind, also Update erfolgreich
+		} catch (SQLException e) {
+			if (e.getErrorCode() == 1062) {
+				return false; // Update fehlgeschlagen aufgrund von einem Duplikat
+			} else {
+				// Update fehlgeschlagen aufgrund eines anderen Fehlers
+				logger.error(e.getMessage());
+				return false;
+			}
 		} finally {
 			DBUtils.closeStatement(statement);
 		}
+
 	}
 
 	public void insert(String sql, Object... params) throws Exception {
