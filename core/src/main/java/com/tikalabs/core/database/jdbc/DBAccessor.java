@@ -256,6 +256,26 @@ public class DBAccessor implements DBOperations {
 		}
 	}
 
+	/**
+	 * Legt eine neue Datenbanktabelle an.
+	 *
+	 * @param tableName   Tabellenname
+	 * @param columnNames Spaltennamen
+	 */
+	public void createTable(final String tableName, final List<String> columnNames) {
+
+		StringBuilder query = new StringBuilder().append("CREATE TABLE ").append(tableName).append(" (");
+		String prefix = "";
+		for (String columnName : columnNames) {
+			query.append(prefix);
+			query.append(columnName).append(" varchar(255)");
+			prefix = ",";
+		}
+		query.append(")");
+
+		executeUpdate(query.toString());
+	}
+
 	protected <T> RowMapper<T> getSingleColumnRowMapper(Class<T> requiredType) {
 		return new SingleColumnRowMapper<T>(requiredType);
 
