@@ -11,13 +11,38 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
+import commons.csv.recordprocessor.ListRecordProcessor;
+import commons.csv.recordprocessor.RecordProcessor;
+
 public abstract class AbstractCSVParser<T> {
 
 	private final String filePath;
 	private List<String> headerNames;
+	private int desiredHeaderIndex;
+	private RecordProcessor<T> recordProcessor; // Verarbeitungslogik
 
 	protected AbstractCSVParser(String filePath) {
 		this.filePath = filePath;
+		this.setDesiredHeaderIndex(0);
+		this.recordProcessor = new ListRecordProcessor<T>();
+	}
+
+	protected AbstractCSVParser(String filePath, int headerIndex) {
+		this.filePath = filePath;
+		this.setDesiredHeaderIndex(headerIndex);
+		this.recordProcessor = new ListRecordProcessor<T>();
+	}
+
+	protected AbstractCSVParser(String filePath, RecordProcessor<T> recordProcessor) {
+		this.filePath = filePath;
+		this.setDesiredHeaderIndex(0);
+		this.recordProcessor = recordProcessor;
+	}
+
+	protected AbstractCSVParser(String filePath, RecordProcessor<T> recordProcessor, int headerIndex) {
+		this.filePath = filePath;
+		this.setDesiredHeaderIndex(headerIndex);
+		this.recordProcessor = recordProcessor;
 	}
 
 	public List<T> parseCSV() {
@@ -25,12 +50,19 @@ public abstract class AbstractCSVParser<T> {
 		List<T> rowDataList = new ArrayList<>();
 
 		try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+			if (this.getDesiredHeaderIndex() > 0) {
+				for (int i = 0; i < this.getDesiredHeaderIndex(); i++)
+					br.readLine();
+			}
 			CSVParser csvParser = CSVFormat.DEFAULT.withDelimiter(';').withFirstRecordAsHeader().parse(br);
 			this.setHeaderNames(csvParser.getHeaderNames());
 
 			for (CSVRecord csvRecord : csvParser) {
 
-				rowDataList.add(this.parseRecord(csvRecord));
+				if (recordProcessor != null) {
+					recordProcessor.process(this.parseRecord(csvRecord));
+				}
+				// rowDataList.add(this.parseRecord(csvRecord));
 
 			}
 
@@ -40,6 +72,14 @@ public abstract class AbstractCSVParser<T> {
 			handleIOException(e);
 		}
 		return rowDataList;
+	}
+
+	public void setDesiredHeaderIndex(int headerIndex) {
+		this.desiredHeaderIndex = headerIndex;
+	}
+
+	public int getDesiredHeaderIndex() {
+		return this.desiredHeaderIndex;
 	}
 
 	private void handleFileNotFound(FileNotFoundException e) {
