@@ -11,15 +11,12 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 
-import commons.csv.recordprocessor.ListRecordProcessor;
-import commons.csv.recordprocessor.RecordProcessor;
-
 public abstract class AbstractCSVParser<T> {
 
 	private final String filePath;
 	private List<String> headerNames;
 	private int desiredHeaderIndex;
-	private RecordProcessor<T> recordProcessor; // Verarbeitungslogik
+	private final RecordProcessor<T> recordProcessor; // Verarbeitungslogik
 
 	protected AbstractCSVParser(String filePath) {
 		this.filePath = filePath;
@@ -62,7 +59,7 @@ public abstract class AbstractCSVParser<T> {
 				if (recordProcessor != null) {
 					recordProcessor.process(this.parseRecord(csvRecord));
 				}
-				// rowDataList.add(this.parseRecord(csvRecord));
+
 
 			}
 
